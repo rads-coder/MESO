@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Farmakovigilans Terintegrasi Rumah Sakit (SiFarma-RS)</title>
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-dark: #115e59;
+            --primary-light: #ccfbf1;
+            --secondary: #1e293b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --green: #16a34a;
+            --green-bg: #dcfce7;
+            --yellow: #d97706;
+            --yellow-bg: #fef3c7;
+            --red: #dc2626;
+            --red-bg: #fee2e2;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); line-height: 1.5; }
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white; padding: 1rem 1.5rem;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .brand h1 { font-size: 1.25rem; font-weight: 700; }
+        .brand p { font-size: 0.82rem; opacity: 0.9; }
+        .nav-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .tab-btn {
+            background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25);
+            padding: 0.5rem 0.9rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.25); }
+        .tab-btn.active { background: white; color: var(--primary-dark); border-color: white; }
+        .container { max-width: 1280px; margin: 1.5rem auto; padding: 0 1rem; }
+        .view-panel { display: none; }
+        .view-panel.active { display: block; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 1.25rem;
+        }
+        .card h2 { font-size: 1.05rem; color: var(--secondary); margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+        .card h3 { font-size: 0.95rem; color: var(--secondary); margin: 0.75rem 0 0.5rem; }
+        .badge {
+            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+        }
+        .badge-green { background: var(--green-bg); color: var(--green); }
+        .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+        .badge-red { background: var(--red-bg); color: var(--red); }
+        .badge-info { background: #e0f2fe; color: #0369a1; }
+        .form-group { margin-bottom: 0.85rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--secondary); }
+        input, select, textarea {
+            width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.9rem; background: #fff;
+        }
+        button.btn {
+            background: var(--primary); color: white; border: none; padding: 0.6rem 1rem;
+            border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.88rem; transition: 0.2s;
+        }
+        button.btn:hover { background: var(--primary-dark); }
+        button.btn-outline {
+            background: transparent; color: var(--primary); border: 1px solid var(--primary);
+        }
+        button.btn-danger { background: var(--red); color: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; font-weight: 600; color: var(--secondary); }
+        .alert-box { padding: 1rem; border-radius: 10px; margin-top: 1rem; border-left: 5px solid; }
+        .alert-HIJAU { background: var(--green-bg); border-color: var(--green); color: #14532d; }
+        .alert-KUNING { background: var(--yellow-bg); border-color: var(--yellow); color: #78350f; }
+        .alert-MERAH { background: var(--red-bg); border-color: var(--red); color: #7f1d1d; }
+        .wa-screen {
+            background: #efeae2; border-radius: 12px; padding: 1rem; max-height: 460px; overflow-y: auto;
+            border: 1px solid #cbd5e1;
+        }
+        .wa-bubble {
+            background: #ffffff; padding: 0.75rem 1rem; border-radius: 0 10px 10px 10px;
+            margin-bottom: 0.75rem; max-width: 88%; box-shadow: 0 1px 2px rgba(0,0,0,0.08); font-size: 0.85rem;
+        }
+        .wa-bubble.out {
+            background: #d9fdd3; margin-left: auto; border-radius: 10px 0 10px 10px;
+        }
+        .wa-time { font-size: 0.7rem; color: var(--muted); text-align: right; margin-top: 0.25rem; }
+        .kpi-card { background: white; padding: 1rem; border-radius: 10px; border: 1px solid var(--border); }
+        .kpi-val { font-size: 1.6rem; font-weight: 800; color: var(--primary-dark); margin: 0.2rem 0; }
+        .kpi-sub { font-size: 0.78rem; color: var(--muted); }
+        .risk-tag { display: inline-block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 0.15rem 0.45rem; border-radius: 6px; font-size: 0.72rem; margin-right: 0.25rem; font-weight: 600; }
+        .qr-box {
+            border: 2px dashed var(--primary); padding: 0.75rem; border-radius: 10px; text-align: center; background: #f0fdfa;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <h1>SiFarma-RS | Sistem Farmakovigilans Terintegrasi</h1>
+        <p>Pemantauan & Edukasi ESO Pasien Rawat Jalan via QR, WhatsApp & Integrasi SIMRS (HL7 FHIR / KFA)</p>
+    </div>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('pasien')">1. Portal Pasien (QR Web)</button>
+        <button class="tab-btn" onclick="switchTab('whatsapp')">2. Simulator WhatsApp API</button>
+        <button class="tab-btn" onclick="switchTab('apoteker')">3. Portal Apoteker & Triase</button>
+        <button class="tab-btn" onclick="switchTab('naranjo')">4. Penilaian Naranjo & MESO</button>
+        <button class="tab-btn" onclick="switchTab('kft')">5. Dasbor KFT & Database KFA</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- TAB 1: PORTAL PASIEN (QR PWA) -->
+    <div id="view-pasien" class="view-panel active">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <h2>
+                        <span>Kartu Informasi Obat Pasien (Akses QR Etiket)</span>
+                        <span class="badge badge-info" id="authStatus">Terverifikasi Tanggal Lahir</span>
+                    </h2>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.85rem;">
+                        <select id="langSelect" onchange="renderPatientMeds()" style="width:auto;">
+                            <option value="id">Bahasa Indonesia (Sederhana)</option>
+                            <option value="jv">Bahasa Jawa (Krama/Ngoko Halus)</option>
+                        </select>
+                        <button class="btn btn-outline" onclick="speakMedicationInfo()">🔊 Bacakan Suara (Lansia/Aksesibilitas)</button>
+                        <button class="btn btn-outline" onclick="togglePrivacyLock()">🔒 Kunci / Verifikasi Ulang</button>
+                    </div>
+
+                    <div id="privacyGate" style="display:none; background:#f8fafc; padding:1rem; border-radius:8px; border:1px solid var(--border); margin-bottom:1rem;">
+                        <label>Verifikasi Keamanan Data Kesehatan (UU PDP - Masukkan Tahun Lahir Pasien: 1958)</label>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="text" id="dobInput" placeholder="Contoh: 1958" value="1958">
+                            <button class="btn" onclick="unlockPrivacy()">Buka Data Obat</button>
+                        </div>
+                    </div>
+
+                    <div id="patientMedContent">
+                        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:0.5rem;">
+                            <strong>Pasien:</strong> Tn. S*** (68 Thn) | <strong>No. Resep:</strong> RX-20261105-001 | <strong>Poli:</strong> Penyakit Dalam
+                        </p>
+                        <div style="margin-bottom:0.85rem;">
+                            <span class="risk-tag">⚠️ Lansia (&gt;65 Thn)</span>
+                            <span class="risk-tag">⚠️ Penurunan Fungsi Ginjal (eGFR 48)</span>
+                            <span class="risk-tag">⚠️ Polifarmasi</span>
+                        </div>
+                        <div id="medCardsContainer"></div>
+                        <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:0.75rem; border-radius:6px; font-size:0.82rem; margin-top:0.75rem;">
+                            <strong>Pesan Penting Apoteker:</strong> Jangan menghentikan minum obat secara sepihak tanpa berkonsultasi dengan apoteker atau dokter, kecuali muncul tanda bahaya darurat (Merah).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h2>Formulir Pelaporan Keluhan Efek Samping Obat</h2>
+                    <p style="font-size:0.83rem; color:var(--muted); margin-bottom:1rem;">
+                        Laporkan jika Bapak/Ibu merasakan keluhan setelah meminum obat. Sistem akan memilah tingkat kedaruratan secara otomatis.
+                    </p>
+                    <div class="form-group">
+                        <label>Obat yang Dicurigai Menimbulkan Keluhan</label>
+                        <select id="complaintDrug">
+                            <option value="Amlodipin 10 mg (KFA-920014)">Amlodipin 10 mg (Obat Tekanan Darah)</option>
+                            <option value="Glimepirid 2 mg (KFA-920088)">Glimepirid 2 mg (Obat Gula Darah)</option>
+                            <option value="Warfarin 2 mg (KFA-920312)">Warfarin 2 mg (Pengencer Darah)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gejala Utama yang Dirasakan</label>
+                        <select id="complaintSymptom">
+                            <option value="HIJAU|Bengkak ringan di pergelangan kaki / pusing ringan saat berdiri">Bengkak ringan di pergelangan kaki / pusing ringan</option>
+                            <option value="HIJAU|Mual ringan atau rasa tidak nyaman di perut setelah minum obat">Mual ringan / perut kurang nyaman</option>
+                            <option value="KUNING|Gemetar, keringat dingin, lemas (gejala gula darah turun/hipoglikemia)">Gemetar, keringat dingin, lemas terus-menerus</option>
+                            <option value="KUNING|Bengkak kaki makin membesar atau nyeri kepala mengganggu aktivitas">Bengkak kaki makin berat / nyeri kepala mengganggu</option>
+                            <option value="MERAH|Sesak napas, bengkak wajah/bibir, atau ruam kemerahan seluruh tubuh">Sesak napas / bengkak wajah & bibir / ruam seluruh tubuh</option>
+                            <option value="MERAH|Perdarahan hebat (BAB hitam/muntah darah/mimisan tidak berhenti) atau pingsan">Perdarahan hebat / mimisan tak berhenti / pingsan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kapan Keluhan Mulai Muncul?</label>
+                        <input type="text" id="complaintOnset" value="Hari ke-2 setelah minum obat malam">
+                    </div>
+                    <div class="form-group">
+                        <label>Catatan Tambahan Pasien / Keluarga</label>
+                        <textarea id="complaintNotes" rows="2" placeholder="Ceritakan singkat kondisi saat ini..."></textarea>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button class="btn" onclick="submitPatientComplaint()">Kirim Laporan & Cek Triase Otomatis</button>
+                        <button class="btn btn-outline" onclick="alert('Menghubungkan ke WhatsApp Apoteker Jaga Instalasi Farmasi...')">📞 Hubungi Apoteker Jaga</button>
+                    </div>
+
+                    <div id="triageResultBox" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: SIMULATOR WHATSAPP BUSINESS API -->
+    <div id="view-whatsapp" class="view-panel">
+        <div class="grid-2">
+            <div class="card">
+                <h2>Pengaturan Pengiriman Pesan & Consent (Opt-In)</h2>
+                <p style="font-size:0.84rem; color:var(--muted); margin-bottom:0.85rem;">
+                    Sesuai prinsip pelindungan data pribadi (UU No. 27 Tahun 2022), pesan WhatsApp tidak menampilkan diagnosis medis atau identitas berlebih.
+                </p>
+                <div class="form-group">
+                    <label>Status Persetujuan Pasien (Consent Tertulis/Elektronik)</label>
+                    <select id="waConsent">
+                        <option value="OPT_IN">Aktif (Pasien Menyetujui Pendampingan WhatsApp)</option>
+                        <option value="OPT_OUT">Berhenti Berlangganan (Opt-Out)</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <button class="btn" onclick="sendWaTemplate('initial')">1. Kirim Pesan Awal (Saat Penyerahan Obat / Resep Terverifikasi)</button>
+                    <button class="btn btn-outline" onclick="sendWaTemplate('day2')">2. Simulasi Jadwal Tindak Lanjut Hari ke-2 (Follow-Up Otomatis)</button>
+                    <button class="btn btn-outline" onclick="sendWaTemplate('day7')">3. Simulasi Jadwal Tindak Lanjut Hari ke-7 (Evaluasi Kepatuhan & ESO)</button>
+                    <button class="btn btn-danger" onclick="sendWaTemplate('stop')">4. Simulasi Pasien Ketik "BERHENTI" (Tarik Persetujuan)</button>
+                </div>
+
+                <div class="qr-box" style="margin-top:1.25rem;">
+                    <strong>Pratinjau Etiket Obat Terintegrasi QR</strong>
+                    <p style="font-size:0.78rem; color:var(--muted); margin:0.35rem 0;">Scan QR pada etiket obat membuka Halaman Pasien tanpa instal aplikasi</p>
+                    <div style="font-family:monospace; font-size:0.75rem; background:white; padding:0.5rem; border-radius:6px; border:1px solid var(--border);">
+                        [QR-CODE: https://sifarma-rs.id/p/RX-20261105-001]<br>
+                        Tn. S*** | Amlodipin 10mg (1x1 Malam)<br>
+                        Scan QR untuk info Efek Samping & Lapor Keluhan
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Layar Simulasi WhatsApp Pasien (Official Business API)</h2>
+                <div class="wa-screen" id="waChatContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: PORTAL APOTEKER & TRIASE -->
+    <div id="view-apoteker" class="view-panel">
+        <div class="card">
+            <h2>Integrasi Resep Elektronik SIMRS (API / HL7 FHIR) & Penapisan Faktor Risiko</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Resep FHIR</th>
+                        <th>Pasien & Usia</th>
+                        <th>Poli</th>
+                        <th>Obat Diresepkan (Kode KFA)</th>
+                        <th>Penanda Faktor Risiko</th>
+                        <th>Consent WA</th>
+                        <th>Aksi Apoteker</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>RX-20261105-001</td>
+                        <td>Tn. S*** (68 Thn)</td>
+                        <td>Penyakit Dalam</td>
+                        <td>Amlodipin 10mg, Glimepirid 2mg, Warfarin 2mg</td>
+                        <td><span class="risk-tag">Lansia</span><span class="risk-tag">Ginjal</span><span class="risk-tag">Polifarmasi</span></td>
+                        <td><span class="badge badge-green">Opt-In</span></td>
+                        <td><button class="btn" style="padding:0.3rem 0.6rem; font-size:0.78rem;" onclick="switchTab('pasien')">Buka Halaman QR</button></td>
+                    </tr>
+                    <tr>
+                        <td>RX-20261105-002</td>
+                        <td>Ny. R*** (29 Thn)</td>
+                        <td>Kebidanan</td>
+                        <td>Nifedipin 10mg, Metildopa 250mg</td>
+                        <td><span class="risk-tag">Kehamilan</span><span class="risk-tag">Alergi Sulfa</span></td>
+                        <td><span class="badge badge-green">Opt-In</span></td>
+                        <td><button class="btn" style="padding:0.3rem 0.6rem; font-size:0.78rem;" onclick="alert('Pesan edukasi khusus kehamilan & QR etiket telah dikirim ke antrean cetak.')">Kirim Edukasi</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>
+                <span>Antrean Triase Keluhan Pasien & Tindak Lanjut Apoteker</span>
+                <span style="font-size:0.8rem; font-weight:normal; color:var(--muted);">Target SLA: Merah &lt; 1 Jam | Kuning &lt; 24 Jam</span>
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Waktu Lapor</th>
+                        <th>Pasien</th>
+                        <th>Obat Dicurigai</th>
+                        <th>Gejala Dilaporkan</th>
+                        <th>Tingkat Triase</th>
+                        <th>Status SLA</th>
+                        <th>Tindak Lanjut</th>
+                    </tr>
+                </thead>
+                <tbody id="triageQueueBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 4: PENILAIAN KAUSALITAS NARANJO & DRAF MESO BPOM -->
+    <div id="view-naranjo" class="view-panel">
+        <div class="grid-2">
+            <div class="card">
+                <h2>Kalkulator Kausalitas Algoritma Naranjo</h2>
+                <p style="font-size:0.82rem; color:var(--muted); margin-bottom:0.75rem;">
+                    Gunakan untuk menilai hubungan kausalitas antara obat yang dicurigai dan keluhan ESO pasien sebelum diteruskan ke BPOM.
+                </p>
+                <div id="naranjoQuestions">
+                    <div class="form-group">
+                        <label>1. Apakah ada laporan efek samping serupa sebelumnya pada obat ini?</label>
+                        <select class="naranjo-q"><option value="1">Ya (+1)</option><option value="0">Tidak (0)</option><option value="0">Tidak Tahu (0)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>2. Apakah efek samping muncul setelah obat yang dicurigai diberikan?</label>
+                        <select class="naranjo-q"><option value="2">Ya (+2)</option><option value="-1">Tidak (-1)</option><option value="0">Tidak Tahu (0)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>3. Apakah efek samping membaik setelah obat dihentikan atau diberi antagonis khusus?</label>
+                        <select class="naranjo-q"><option value="1">Ya (+1)</option><option value="0">Tidak (0)</option><option value="0">Tidak Tahu / Belum Dihentikan (0)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>4. Apakah efek samping muncul kembali ketika obat diberikan ulang (rechallenge)?</label>
+                        <select class="naranjo-q"><option value="0">Tidak Dilakukan / Tidak Tahu (0)</option><option value="2">Ya (+2)</option><option value="-1">Tidak (-1)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>5. Apakah ada penyebab alternatif (selain obat) yang dapat menjelaskan reaksi tersebut?</label>
+                        <select class="naranjo-q"><option value="2">Tidak Ada Penyebab Lain (+2)</option><option value="-1">Ya, Ada Penyebab Lain (-1)</option><option value="0">Tidak Tahu (0)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>6. Apakah reaksi muncul kembali saat diberikan plasebo?</label>
+                        <select class="naranjo-q"><option value="0">Tidak Dilakukan / Tidak Tahu (0)</option><option value="-1">Ya (-1)</option><option value="1">Tidak (+1)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>7. Apakah kadar obat dalam darah/cairan tubuh berada pada rentang toksik?</label>
+                        <select class="naranjo-q"><option value="0">Tidak Diperiksa / Tidak Tahu (0)</option><option value="1">Ya (+1)</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>8. Apakah reaksi makin berat saat dosis dinaikkan atau berkurang saat dosis diturunkan?</label>
+                        <select class="naranjo-q"><option value="1">Ya (+1)</option><option value="0">Tidak / Tidak Tahu (0)</option></select>
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateNaranjo()">Hitung Skor Kausalitas & Buat Draf MESO</button>
+            </div>
+
+            <div class="card">
+                <h2>Draf Formulir Pelaporan MESO BPOM</h2>
+                <div id="mesoDraftContainer" style="background:#f8fafc; padding:1rem; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
+                    <p><strong>Status Kausalitas Naranjo:</strong> <span id="naranjoScoreBadge" class="badge badge-yellow">Skor 6 - Probable (Kemungkinan Besar)</span></p>
+                    <hr style="margin:0.65rem 0; border:none; border-top:1px solid var(--border);">
+                    <p><strong>1. Identitas Pasien (Tersamar):</strong> Tn. S*** | Usia: 68 Thn | Jenis Kelamin: Laki-laki</p>
+                    <p><strong>2. Obat Dicurigai (Kode KFA):</strong> <span id="mesoDrug">Warfarin 2 mg (KFA-920312)</span></p>
+                    <p><strong>3. Obat Penyerta:</strong> Amlodipin 10 mg, Glimepirid 2 mg</p>
+                    <p><strong>4. Deskripsi Kejadian ESO:</strong> <span id="mesoEvent">Perdarahan gusi / mimisan berulang pada hari ke-2 penggunaan</span></p>
+                    <p><strong>5. Faktor Risiko:</strong> Lansia (&gt;65 tahun), eGFR 48 mL/menit, Polifarmasi</p>
+                    <p><strong>6. Tindakan & Kesudahan:</strong> Obat dihentikan sementara oleh dokter, pasien ditangani, kondisi membaik</p>
+                    <p><strong>7. Pelapor:</strong> Apoteker Klinis Instalasi Farmasi & KFT Rumah Sakit</p>
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                    <button class="btn" onclick="exportMesoJson()">📥 Ekspor Draf MESO (JSON/e-MESO BPOM)</button>
+                    <button class="btn btn-outline" onclick="window.print()">🖨️ Cetak Laporan KFT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: DASBOR ANALITIK KFT & DATABASE OBAT KFA -->
+    <div id="view-kft" class="view-panel">
+        <div class="grid-4">
+            <div class="kpi-card">
+                <div class="kpi-sub">Cakupan Pasien Terjangkau (Consent)</div>
+                <div class="kpi-val">86,4%</div>
+                <div class="kpi-sub"><span class="badge badge-green">Target &gt; 80% Tercapai</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-sub">Tingkat Respons Tindak Lanjut WA</div>
+                <div class="kpi-val">48,2%</div>
+                <div class="kpi-sub"><span class="badge badge-green">Target &gt; 40% Tercapai</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-sub">Waktu Respons Kasus Merah / Kuning</div>
+                <div class="kpi-val">18 mnt / 4,2 jam</div>
+                <div class="kpi-sub"><span class="badge badge-green">Sesuai SLA (&lt;1 jam &amp; &lt;24 jam)</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-sub">Kenaikan Laporan MESO &amp; Kepuasan</div>
+                <div class="kpi-val">2,8x | 4,6/5</div>
+                <div class="kpi-sub"><span class="badge badge-green">Target &ge;2x &amp; Skor &ge;4/5</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Manajemen Basis Data Obat, ESO & Pemetaan KFA (Kurasi Tim Farmasi Klinis)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kode KFA</th>
+                        <th>Nama Generik & Kekuatan</th>
+                        <th>ESO Umum (Hijau)</th>
+                        <th>ESO Sedang (Kuning)</th>
+                        <th>Tanda Bahaya Serius (Merah)</th>
+                        <th>Versi & Verifikator</th>
+                    </tr>
+                </thead>
+                <tbody id="kfaTableBody">
+                    <tr>
+                        <td>KFA-920014</td>
+                        <td>Amlodipin 10 mg</td>
+                        <td>Bengkak ringan pergelangan kaki, wajah terasa hangat</td>
+                        <td>Bengkak tungkai menetap, pusing mengganggu</td>
+                        <td>Nyeri dada hebat, pingsan, ruam alergi seluruh tubuh</td>
+                        <td>v1.2 (Apt. Klinis KFT)</td>
+                    </tr>
+                    <tr>
+                        <td>KFA-920088</td>
+                        <td>Glimepirid 2 mg</td>
+                        <td>Mual ringan, rasa penuh di lambung</td>
+                        <td>Gemetar, keringat dingin, lapar berlebih (hipoglikemia)</td>
+                        <td>Penurunan kesadaran, kejang, pingsan</td>
+                        <td>v1.4 (Apt. Klinis KFT)</td>
+                    </tr>
+                    <tr>
+                        <td>KFA-920312</td>
+                        <td>Warfarin 2 mg</td>
+                        <td>Memar kecil ringan pada kulit</td>
+                        <td>Mimisan berulang, gusi mudah berdarah saat sikat gigi</td>
+                        <td>BAB hitam, muntah darah, perdarahan tidak berhenti</td>
+                        <td>v2.0 (Ketua KFT)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const medsData = [
+        {
+            name: "Amlodipin 10 mg (KFA-920014)",
+            use_id: "1 kali sehari 1 tablet pada malam hari (untuk mengontrol tekanan darah).",
+            use_jv: "Diunjuk sepisan sedinten 1 tablet wayah dalu (kangge ngontrol tensi getih).",
+            eso_id: "Efek samping ringan yang mungkin muncul: bengkak ringan di pergelangan kaki atau pusing ringan.",
+            eso_jv: "Efek samping entheng ingkang saged muncul: abuh sekedhik teng kemiri suku utawi ngelu entheng.",
+            danger_id: "Segera ke IGD jika nyeri dada berat, pingsan, atau bengkak wajah/bibir.",
+            danger_jv: "Enggal tindak IGD menawi dhadha sesek/nyeri sanget, semaput, utawi pasuryan abuh."
+        },
+        {
+            name: "Glimepirid 2 mg (KFA-920088)",
+            use_id: "1 kali sehari 1 tablet segera sebelum makan pagi (untuk mengontrol gula darah).",
+            use_jv: "Diunjuk sepisan sedinten 1 tablet sakderenge dhahar enjing (kangge gula getih).",
+            eso_id: "Waspadai gejala gula darah turun: gemetar, keringat dingin, lemas (segera minum teh manis).",
+            eso_jv: "Waspada tandha gula mudhun: ndhredheg, kringet adhem, lemes (enggal ngunjuk teh legi).",
+            danger_id: "Segera ke IGD jika pasien tampak bingung berat, sulit dibangunkan, atau pingsan.",
+            danger_jv: "Enggal tindak IGD menawi pasien bingung sanget, angel digugah, utawi semaput."
+        },
+        {
+            name: "Warfarin 2 mg (KFA-920312)",
+            use_id: "1 kali sehari 1 tablet pada jam yang sama setiap hari (pengencer darah).",
+            use_jv: "Diunjuk sepisan sedinten 1 tablet ing jam ingkang sami saben dinten.",
+            eso_id: "Efek samping: gusi mudah berdarah ringan atau memar kecil.",
+            eso_jv: "Efek samping: gusi gampil medal getih sekedhik utawi biru-biru teng kulit.",
+            danger_id: "TANDA BAHAYA MERAH: Perdarahan hebat, BAB berwarna hitam pekat, atau muntah darah.",
+            danger_jv: "TANDHA BAHAYA ABANG: Medal getih kathah, bebucal cemeng, utawi mutah getih."
+        }
+    ];
+
+    const triageQueue = [
+        {
+            time: "08:15 WIB",
+            patient: "Ny. M*** (71 Thn)",
+            drug: "Warfarin 2 mg",
+            symptom: "BAB hitam dan mimisan tidak berhenti sejak pagi",
+            level: "MERAH",
+            sla: "Direspons dalam 12 mnt (Pasien diarahkan ke IGD)"
+        },
+        {
+            time: "08:50 WIB",
+            patient: "Tn. S*** (68 Thn)",
+            drug: "Glimepirid 2 mg",
+            symptom: "Gemetar dan keringat dingin 2 jam setelah sarapan",
+            level: "KUNING",
+            sla: "Menunggu telepon Apoteker (< 24 Jam)"
+        },
+        {
+            time: "09:10 WIB",
+            patient: "Tn. B*** (54 Thn)",
+            drug: "Amlodipin 10 mg",
+            symptom: "Bengkak ringan di pergelangan kaki sore hari",
+            level: "HIJAU",
+            sla: "Saran perawatan mandiri terkirim otomatis"
+        }
+    ];
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('view-' + tabId).classList.add('active');
+        const idxMap = { pasien: 0, whatsapp: 1, apoteker: 2, naranjo: 3, kft: 4 };
+        document.querySelectorAll('.tab-btn')[idxMap[tabId]].classList.add('active');
+    }
+
+    function renderPatientMeds() {
+        const lang = document.getElementById('langSelect').value;
+        const container = document.getElementById('medCardsContainer');
+        container.innerHTML = medsData.map(m => `
+            <div style="border:1px solid var(--border); border-radius:8px; padding:0.85rem; margin-bottom:0.65rem; background:#fafafa;">
+                <strong style="color:var(--primary-dark);">${m.name}</strong>
+                <p style="font-size:0.84rem; margin-top:0.25rem;">✅ <strong>Cara Pakai:</strong> ${lang === 'id' ? m.use_id : m.use_jv}</p>
+                <p style="font-size:0.84rem; color:#475569;">ℹ️ <strong>ESO Umum:</strong> ${lang === 'id' ? m.eso_id : m.eso_jv}</p>
+                <p style="font-size:0.84rem; color:var(--red); font-weight:600;">🚨 <strong>Tanda Bahaya:</strong> ${lang === 'id' ? m.danger_id : m.danger_jv}</p>
+            </div>
+        `).join('');
+    }
+
+    function speakMedicationInfo() {
+        if (!('speechSynthesis' in window)) {
+            alert("Browser perangkat ini belum mendukung pembaca suara otomatis.");
+            return;
+        }
+        window.speechSynthesis.cancel();
+        const lang = document.getElementById('langSelect').value;
+        const text = medsData.map(m => `${m.name}. ${lang === 'id' ? m.use_id : m.use_jv} ${lang === 'id' ? m.danger_id : m.danger_jv}`).join(' ');
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.92;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function togglePrivacyLock() {
+        document.getElementById('privacyGate').style.display = 'block';
+        document.getElementById('patientMedContent').style.display = 'none';
+        document.getElementById('authStatus').textContent = 'Terkunci (Menunggu Verifikasi)';
+        document.getElementById('authStatus').className = 'badge badge-yellow';
+    }
+
+    function unlockPrivacy() {
+        const val = document.getElementById('dobInput').value.trim();
+        if (val === '1958') {
+            document.getElementById('privacyGate').style.display = 'none';
+            document.getElementById('patientMedContent').style.display = 'block';
+            document.getElementById('authStatus').textContent = 'Terverifikasi Tanggal Lahir';
+            document.getElementById('authStatus').className = 'badge badge-info';
+        } else {
+            alert('Tahun lahir tidak sesuai. Masukkan 1958 untuk simulasi.');
+        }
+    }
+
+    function submitPatientComplaint() {
+        const drug = document.getElementById('complaintDrug').value;
+        const rawSym = document.getElementById('complaintSymptom').value.split('|');
+        const level = rawSym[0];
+        const symptom = rawSym[1];
+        const box = document.getElementById('triageResultBox');
+        box.style.display = 'block';
+        box.className = 'alert-box alert-' + level;
+
+        let title = '';
+        let action = '';
+        let slaText = '';
+
+        if (level === 'HIJAU') {
+            title = 'TRIASE HIJAU: Keluhan Ringan & Umum';
+            action = 'Lanjutkan minum obat sesuai anjuran dokter. Tinggikan posisi kaki saat istirahat atau minum obat sesudah makan. Pantau gejala di rumah.';
+            slaText = 'Tercatat otomatis di sistem pemantauan';
+        } else if (level === 'KUNING') {
+            title = 'TRIASE KUNING: Perlu Dinilai Tenaga Kesehatan (< 24 Jam)';
+            action = 'Apoteker rumah sakit akan menghubungi Bapak/Ibu dalam maksimal 24 jam. Jangan menghentikan obat sendiri tanpa instruksi medis.';
+            slaText = 'Antrean Prioritas Apoteker (< 24 Jam)';
+        } else {
+            title = 'TRIASE MERAH: Berpotensi Gawat Darurat!';
+            action = 'SEGERA KE IGD RUMAH SAKIT ATAU FASILITAS KESEHATAN TERDEKAT SEKARANG JUGA! Notifikasi darurat telah dikirimkan ke Apoteker Jaga.';
+            slaText = 'ESKALASI DARURAT (< 1 Jam) - Notifikasi Terkirim!';
+        }
+
+        box.innerHTML = `
+            <strong>${title}</strong>
+            <p style="font-size:0.86rem; margin-top:0.35rem;"><strong>Obat:</strong> ${drug}<br><strong>Gejala:</strong> ${symptom}</p>
+            <p style="font-size:0.86rem; margin-top:0.35rem;"><strong>Rekomendasi Tindakan:</strong> ${action}</p>
+        `;
+
+        triageQueue.unshift({
+            time: "Baru saja",
+            patient: "Tn. S*** (68 Thn)",
+            drug: drug,
+            symptom: symptom,
+            level: level,
+            sla: slaText
+        });
+        renderTriageQueue();
+    }
+
+    function renderTriageQueue() {
+        const tbody = document.getElementById('triageQueueBody');
+        tbody.innerHTML = triageQueue.map((item, idx) => {
+            const badgeClass = item.level === 'MERAH' ? 'badge-red' : (item.level === 'KUNING' ? 'badge-yellow' : 'badge-green');
+            return `
+                <tr>
+                    <td>${item.time}</td>
+                    <td>${item.patient}</td>
+                    <td>${item.drug}</td>
+                    <td>${item.symptom}</td>
+                    <td><span class="badge ${badgeClass}">${item.level}</span></td>
+                    <td>${item.sla}</td>
+                    <td>
+                        <button class="btn" style="padding:0.25rem 0.55rem; font-size:0.75rem;" onclick="openNaranjoForCase(${idx})">Nilai Naranjo / MESO</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function openNaranjoForCase(idx) {
+        const item = triageQueue[idx];
+        document.getElementById('mesoDrug').textContent = item.drug;
+        document.getElementById('mesoEvent').textContent = item.symptom;
+        switchTab('naranjo');
+    }
+
+    function calculateNaranjo() {
+        let total = 0;
+        document.querySelectorAll('.naranjo-q').forEach(sel => {
+            total += parseInt(sel.value, 10);
+        });
+        let category = '';
+        let badge = 'badge-yellow';
+        if (total >= 9) { category = 'Definite (Pasti)'; badge = 'badge-red'; }
+        else if (total >= 5) { category = 'Probable (Kemungkinan Besar)'; badge = 'badge-yellow'; }
+        else if (total >= 1) { category = 'Possible (Kemungkinan)'; badge = 'badge-info'; }
+        else { category = 'Doubtful (Meragukan)'; badge = 'badge-green'; }
+
+        const el = document.getElementById('naranjoScoreBadge');
+        el.className = 'badge ' + badge;
+        el.textContent = `Skor ${total} - ${category}`;
+    }
+
+    function exportMesoJson() {
+        const payload = {
+            form: "Formulir Monitoring Efek Samping Obat (MESO) BPOM",
+            tanggal_laporan: "2026-11-05",
+            pasien_inisial: "Tn. S***",
+            usia_tahun: 68,
+            obat_dicurigai: document.getElementById('mesoDrug').textContent,
+            kejadian_eso: document.getElementById('mesoEvent').textContent,
+            kausalitas_naranjo: document.getElementById('naranjoScoreBadge').textContent
+        };
+        alert("Draf Laporan e-MESO BPOM berhasil disiapkan:
+
+" + JSON.stringify(payload, null, 2));
+    }
+
+    function sendWaTemplate(type) {
+        const chat = document.getElementById('waChatContainer');
+        const consent = document.getElementById('waConsent').value;
+        if (consent === 'OPT_OUT' && type !== 'stop') {
+            alert('Pasien telah menarik persetujuan (Opt-Out). Sistem memblokir pengiriman pesan otomatis sesuai UU PDP.');
+            return;
+        }
+        let msg = '';
+        if (type === 'initial') {
+            msg = `<div class="wa-bubble">
+                <strong>[Instalasi Farmasi RS - Layanan Pendampingan Obat]</strong><br>
+                Halo Bapak/Ibu <strong>Tn. S***</strong>, terima kasih telah menyelesaikan layanan resep rawat jalan hari ini.<br><br>
+                Untuk menjaga keamanan pengobatan di rumah, silakan buka panduan cara minum obat, efek samping yang perlu dipantau, serta tanda bahaya pada tautan aman berikut:<br>
+                🔗 <strong>https://sifarma-rs.id/p/RX-20261105-001</strong><br><br>
+                <em>(Demi privasi Anda, detail nama obat hanya ditampilkan setelah verifikasi tahun lahir. Balas BERHENTI kapan saja untuk menonaktifkan layanan ini).</em>
+                <div class="wa-time">09:42 WIB ✓✓</div>
+            </div>`;
+        } else if (type === 'day2') {
+            msg = `<div class="wa-bubble">
+                <strong>[Pemantauan Hari ke-2 Pengobatan]</strong><br>
+                Halo Bapak/Ibu <strong>Tn. S***</strong>, bagaimana kondisi Bapak/Ibu pada hari ke-2 penggunaan obat dari Rumah Sakit?<br><br>
+                <strong>Apakah ada keluhan yang dirasakan?</strong><br>
+                • Balas <strong>AMAN</strong> jika tidak ada keluhan.<br>
+                • Klik tautan <strong>https://sifarma-rs.id/p/RX-20261105-001</strong> untuk mengisi formulir singkat jika ada keluhan agar dapat dipantau Apoteker kami.
+                <div class="wa-time">Hari ke-2, 09:00 WIB ✓✓</div>
+            </div>`;
+        } else if (type === 'day7') {
+            msg = `<div class="wa-bubble">
+                <strong>[Evaluasi Hari ke-7 Pengobatan]</strong><br>
+                Halo Bapak/Ibu <strong>Tn. S***</strong>, semoga kondisi Bapak/Ibu makin membaik. Pastikan obat tetap diminum teratur sesuai anjuran dan jangan dihentikan sendiri tanpa konsultasi.<br><br>
+                Jika ada keluhan efek samping atau pertanyaan, silakan lapor melalui tautan etiket QR Anda.
+                <div class="wa-time">Hari ke-7, 09:00 WIB ✓✓</div>
+            </div>`;
+        } else if (type === 'stop') {
+            document.getElementById('waConsent').value = 'OPT_OUT';
+            msg = `<div class="wa-bubble out">BERHENTI<div class="wa-time">09:45 WIB</div></div>
+            <div class="wa-bubble">
+                Persetujuan pengiriman pesan WhatsApp telah ditarik sesuai hak Pelindungan Data Pribadi Anda. Anda tidak akan menerima pesan otomatis lagi, namun tetap dapat mengakses informasi obat melalui QR pada etiket obat kapan saja.
+                <div class="wa-time">09:45 WIB ✓✓</div>
+            </div>`;
+        }
+        chat.insertAdjacentHTML('beforeend', msg);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Initialize views
+    renderPatientMeds();
+    renderTriageQueue();
+    sendWaTemplate('initial');
+    sendWaTemplate('day2');
+</script>
+
+</body>
+</html>
